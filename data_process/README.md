@@ -1,41 +1,44 @@
-## Description of processing PCAP files to generate dataset
-For PCAP data, it is recommended to clean it first. Since the program processing logic is not smooth, we detail the data pre-processing for pre-training and fine-tuning as followed.
+## 用于生成数据集的PCAP文件处理过程
+推荐处理PCAP数据之前先进行数据清洗。由于程序逻辑较为复杂，以下详细说明预训练与微调阶段的数据预处理步骤。
 
-### Pre-training Stage
-*Main Program*: dataset_generation.py
+### 预训练阶段（位于data_process）
+*主程序*：dataset_generation.py
 
-*Functions*: pretrain_dataset_generation, get_burst_feature
+*函数*：pretrain_dataset_generation，get_burst_feature
 
-1. Initialization. 
-Set the variable `pcap_path` (line:616) as the directory of PCAP data to be processed. 
-Set the variable `word_dir` (line:23) and `word_name` (line:24) as the storage directory of pre-training daraset.
+1. 初始化。
+将变量 `pcap_path` （第488行）修改为待处理的PCAP数据目录。
+将变量 `word_dir` （第15行）和 `word_name` （第16行）修改为预训练数据集的存储目录。
 
-2. Pre-process PCAP. 
-Set the variable `output_split_path` (line:583) and `pcap_output_path` (line:584). 
-The `pcap_output_path` indicates the storage directory where the pcapng format of PCAP data is converted to pcap format. 
-The `output_split_path` represents the storage directory for PCAP data slicing into session format. 
+2. PCAP预处理。
+修改变量 `output_split_path` （第455行）和 `pcap_output_path` （第456行）。
+`pcap_output_path` 指定从pcapng转换为pcap格式的数据存储目录。
+`output_split_path` 表示按会话格式切分后的pcap数据存储目录。
 
-3. Gnerate Pre-training Datasets. 
-Following the completion of PCAP data processing, the program generates a pre-training dataset composed of BURST.
+3. 生成预训练模型。
+PCAP数据集处理完成后，程序将生成由BURST构成的预训练数据集。
 
-### Fine-tuning Stage
-*Main Program*: main.py
+### 微调阶段
+*主程序*：main.py
 
-*Functions*: data_preprocess.py, dataset_generation.py, open_dataset_deal.py, dataset_cleanning.py
+*函数*：data_preprocess.py, dataset_generation.py, open_dataset_deal.py, dataset_cleanning.py
 
-The key idea of the fine-tuning phase when processing public PCAP datasets is to first distinguish folders for different labeled data in the dataset, then perform session slicing on the data, and finally generate packet-level or flow-level datasets according to sample needs.
+在处理公开PCAP数据集时，微调阶段的核心逻辑是首先将数据集中不同标签的的数据按文件夹区分，然后对数据进行切分，最后生成包级别（packet-level）或流级别（flow-level）的数据集。
 
-**Note:** Due to the complexity of the possible existence of raw PCAP data, it is recommended that the following steps be performed to check the code execution when it reports an error.
+**注意**：由于原始PCAP数据的复杂性，如果报错，推荐按照以下流程进行检查。
 
-1. Initialization. 
-`pcap_path`, `dataset_save_path`, `samples`, `features`, `dataset_level` (line:28) are the basis variables, which represent the original data directory, the stored generated data directory, the number of samples, the feature type, and the data level. `open_dataset_not_pcap` (line:215)  represents the processing of converting PCAP data to pcap format, e.g. pcapng to pcap. 
-And `file2dir` (line:226) represents the generation of category directories to store PCAP data when a pcap file is a category. 
+1. 初始化。
+`pcap_path`，`dataset_save_path`，`samples`，`features`，`dataset_level` （第16行）是最基础的变量，分别代表原始数据目录，数据集保存目录，样本数量，特征类型和数据集级别。 `open_dataset_not_pcap` （第189行）表示将非标准PCAP格式数据转化为pcap，例如pcapng转换为pcap。
+`file2dir` （第200行）表示若若PCAP文件代表一个类别，生成存储PCAP数据的类别目录。
 
-2. Pre-process. 
-The data pre-processing is primarily to split the PCAP data in the directory into session data. 
-Please set the `splitcap_finish` parameter to 0 to initialize the sample number array, and the value of `sample` set at this time should not exceed the minimum number of samples. 
-Then you can set `splitcap=True` (line:54) and run the code for splitting PCAP data. The splitted sessions will be saved in `pcap_path\\splitcap`.
+2. 预处理。
+数据预处理过程主要将PCAP数据切分为会话数据。
+请将参数 `splitcap_finish` 设置为0以初始化样本数数组，以及 `sample` 的值设置应不超过最小样本数。
+然后可以设置 `splitcap=True` （第42行）然后运行代码来切分PCAP数据。切分后的数据将保存于 `pcap_path\\splitcap`。
 
-3. Generation. 
-After data pre-processing is completed, variables need to be changed for generating fine-tuned training data. The `pcap_path` should be the path of splitted data and set 
-`splitcap=False`. Now the `sample` can be unrestricted by the minimum sample size. The `open_dataset_not_pcap` and `file2dir` should be False. Then the dataset for fine-tuning will be generated and saved in `dataset_save_path`. 
+3. 数据集生成
+预处理完成后，需要调整参数以生成微调数据。`pcap_path` 应为切分后的数据，并且应设置`splitcap=False`。 
+现在 `sample` 可以不受最小样本数限制。`open_dataset_not_pcap` 和 `file2dir` 都应为 False。微调数据集将生成并保存于 `dataset_save_path`。
+
+---
+
