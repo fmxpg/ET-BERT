@@ -2,23 +2,12 @@
 #-*- coding:utf-8 -*-
 
 import numpy as np
-import json
 import os
-import time
-import xlrd
 import pickle
 from sklearn.model_selection import StratifiedShuffleSplit
-import pandas as pd
-from scipy.stats import skew,kurtosis
-import sys
 import csv
-import copy
-import tqdm
-import random
-import shutil
 import dataset_generation
 
-import data_preprocess
 import open_dataset_deal
 
 _category = 120 # dataset class
