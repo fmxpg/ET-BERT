@@ -2,20 +2,12 @@
 #-*- coding:utf-8 -*-
 
 import os
-import sys
-import copy
-import xlrd
 import json
 import tqdm
 import shutil
-import pickle
 import random
 import binascii
-import operator
-import numpy as np
-import pandas as pd
 import scapy.all as scapy
-from functools import reduce
 from flowcontainer.extractor import extract
 
 random.seed(40)

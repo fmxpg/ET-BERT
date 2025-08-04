@@ -3,17 +3,16 @@
 
 import os
 import shutil
-import subprocess
 
 def fix_dataset(method):
     dataset_path = "F:\\dataset\\cstnet-tls1.3\\"
 
-    comand = "I:\\mergecap.exe -w I:\\dataset\\%s.pcap I:\\%s\\*.pcap"
+    command = "I:\\mergecap.exe -w I:\\dataset\\%s.pcap I:\\%s\\*.pcap"
     for p, d, f in os.walk(dataset_path):
         for label in d:
             if label != "0_merge_datas":
                 label_domain = label.split(".")[0]
-                print(comand%(label_domain,label))
+                print(command%(label_domain,label))
 
     return 0
 

@@ -2,7 +2,6 @@
 #-*- coding:utf-8 -*-
 
 import numpy as np
-import os,shutil
 import json
 import random
 
