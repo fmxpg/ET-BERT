@@ -46,7 +46,7 @@ PCAP数据集处理完成后，程序将生成由BURST构成的预训练数据�
 
 这个文件夹中的文件最让人困惑的点在于它没有很好地实现批处理的逻辑，虽然其代码能够完成全部的工作，但你不知道应该调用什么来实现它。引入“三个小小道”的prepare_dataset.py之后，这一部分所处理的内容就清晰了很多。
 
-## dataset_generation.py
+## dataset_generation
 
 ### convert_pcapng_2_pcap
 
