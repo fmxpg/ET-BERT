@@ -89,7 +89,7 @@ def main():
     if args.target == "cls":
         assert args.labels_num is not None, "Cls target needs the denotation of the number of labels."
 
-    # Load hyper-parameters from config file. 
+    # Load hyperparameters from config file.
     if args.config_path:
         load_hyperparam(args)
 
