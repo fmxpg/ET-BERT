@@ -30,7 +30,7 @@
 掩码参数：
 
 - `dynamic_masking` 是否动态掩码。
-- `whole_word_masking` 是否对整个词掩码。
+- `whole_word_masking` 是否全词掩码。
 - `span_masking` 是否连续掩码。
 - `span_geo_prob` 几何分布参数，默认为0.2（控制掩码长度的概率分布）。
 - `span_max_length` 最大连续掩码长度，默认为10。

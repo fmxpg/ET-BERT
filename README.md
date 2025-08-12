@@ -10,6 +10,8 @@
 
 [pre_training 预训练](pre_training/README.md)
 
+[fine_tuning 微调](fine_tuning/README.md)
+
 [uer python程序包](uer/README.md)
 
 源代码中72是一个精确的神仙数，其含义是对TCP报文，只分析其Encrypted Application Data部分。

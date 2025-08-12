@@ -1,6 +1,6 @@
 ## act_fun
 
-作者实现了一些非线性函数，但是如文件名所表示的，这些函数全部没有使用，所以这里也不写注释。
+非线性函数，由于过于基础，这里不做解释。
 
 ## seed
 
@@ -379,7 +379,7 @@ data文件的核心类，定义了数据集的处理方式。在preprocess阶段
 
 初始化src，tgt_mlm，is_next和seg四个列表，masked_words_num=0。对于每一个instance有两种情况：
 
-若instance长度为4(src, tgt_mlm, is_random_next, seg_pos)，将第一个元素（src）放入src，第二个元素（tgt_mlm）的长度加到masked_words_num，tgt_mlm会写入一个长为第一个元素（src）长度的全0列表作为元素。遍历第二个元素（tgt_mlm），我们已知tgt_mlm是被掩码的位置和原内容的列表的列表，将本函数的tgt_mlm刚刚设置的全0列表进行修改，在对应位置放入原内容。is_next放入第三个元素（is_random_next）。seg根据第四个元素（seg_pos）设置为段编码
+若instance长度为4(src, tgt_mlm, is_random_next, seg_pos)，将第一个元素（src）放入src，第二个元素（tgt_mlm）的长度加到masked_words_num，tgt_mlm会写入一个长为第一个元素（src）长度的全0列表作为元素。遍历第二个元素（tgt_mlm），我们已知tgt_mlm是被掩码的位置和原内容的列表的列表，将本函数的tgt_mlm刚刚设置的全0列表进行修改，在对应位置放入原内容。is_next放入第三个元素（is_random_next）。seg根据第四个元素（seg_pos）设置为段编码。
 
 若其他情况（长度为3）（src, is_random_next, seg_pos），现场调用mask_seq将第一个元素（src）进行掩码生成，然后和上述情况一致。
 
@@ -411,3 +411,79 @@ data文件的核心类，定义了数据集的处理方式。在preprocess阶段
 
 ### get_cosine_with_hard_restarts_schedule_with_warmup
 
+设定包含warmup和含硬重启的余弦损失的调度器。在step到达num_warmup_steps之前，学习率乘数会线性增长到1；此后，在step到达num_training_steps之前，学习率会多次从1余弦减小到0，次数由参数num_cycles决定。
+
+### get_polynomial_decay_schedule_with_warmup
+
+设定包含warmup和余弦损失的调度器。在step到达num_warmup_steps之前，学习率乘数会线性增长到1；此后在step到达num_training_steps之前，学习率乘数会多项式减小到0。power控制其减小方式，大于1则先快后慢，小于1则先慢后快。默认值为1，退化到线性衰减。
+
+### AdaW 类
+
+继承torch.optim.Optimizer。
+
+#### \_\_init\_\_
+
+初始化参数，包括参数列表params，学习率lr，动量系数betas，数值稳定性常数eps，解耦权重衰减系数weight_decay，是否修正偏差correct_bias（这里默认为True，项目调用此类时写死了为False），并进行简单的参数合法性判断。
+
+#### step
+
+若有传入closure，先按照closure更新损失。
+
+对参数组进行遍历，对每个参数组的每一个参数进行遍历。若p没有梯度（冻结或其他原因），不进行处理；若p由稀疏梯度，Adam不支持，抛出错误。
+
+进行状态初始化。若没有，则初始化设定，当前步数为0，一阶动量和二阶动量为0张量。获取动量系数beta1和beta2，更新一阶动量和二阶动量。根据设置判断是否进行偏差修正。进行参数更新。
+
+若weight_decay大于0，使参数进行衰减。
+
+### Adafactor 类
+
+继承torch.optim.Optimizer。
+
+#### \_\_init\_\_
+
+初始化参数。
+
+- `params` 参数列表。
+- `lr` 学习率。
+- `eps` 数值稳定性常数。
+- `clip_threshold` 梯度更新的RMS裁剪阈值。
+- `decay_rate` 平方梯度移动平均衰减系数。
+- `beta1` 一阶动量系数。
+- `weight_decay` 解耦权重衰减系数。
+- `scale_parameter` 是否缩放学习率。（默认为True，本项目调用为False）
+- `relative_step` 是否使用自相关学习率。（默认为True，本项目调用为False）
+- `warmup_init` 是否启用warmup。（默认为False）
+
+#### _get_lr
+
+根据relative_step确定是否调整时间片部分，根据warmup_init决定时间片部分是否有warmup。根据scale_parameter决定是否使用eps来缩放学习率。将二者相乘得到学习率。
+
+#### _get_options
+
+获取param_shape是否维数大于2和beta1是否在param_group的keys中（参数是否为beta1）。
+
+#### _rms
+
+计算给定张量的均方根。
+
+#### _approx_sq_grad
+
+近似计算二阶动量。
+
+#### step
+
+若有传入closure，先按照closure更新损失。
+
+对参数组进行遍历，对每个参数组的每一个参数进行遍历。若p没有梯度（冻结或其他原因），不进行处理；若p由稀疏梯度，Adam不支持，抛出错误；若grad的精度和系统指定的浮点精度不匹配，则进行修正。
+
+进行状态初始化。若没有，则初始化设定，调用_get_options，判断当前参数的形式已确定使用什么方式初始化参数。最终实现的效果同AdamW：一阶动量为0张量，二阶进行矩阵分解。
+
+将数值也进行精度处理。调用_get_lr和_rms计算当前参数的均方根和学习率。
+
+如果参数是矩阵形式的，按照数学方法进行近似梯度的更新，否则按照正常方式更新；同时使参数进行衰减。进行梯度裁剪，解耦参数和梯度更新。最后还原精度。
+
+## subword
+
+### word2sub
+
+将指定的word_ids按照vocab转化为当前的原词汇的列表，按照新的sub_vocab转化为新的sub_ids列表。相当于更换字典。

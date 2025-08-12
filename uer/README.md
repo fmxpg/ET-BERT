@@ -21,7 +21,7 @@ uer应该是直接使用了BERT项目的源码。
 - `remove_transformer_bias` 是否移除transformer偏置。
 - `layernorm` 层归一化类型（`normal` 标准/`t5` RMS Norm），默认为`normal`。
 - `bidirectional` 是否使用双向，仅当rnn模型有效。
-- `factorized_embedding_parameterization` 是否分解嵌入矩阵（大幅减少模型参数，可能降低模型能力）。
+- `factorized_embedding_parameterization` 是否扩展嵌入。
 - `parameter_sharing` 是否共享参数（减少模型参数，减小开销，降低模型能力）。
 
 ### optimization_opts
