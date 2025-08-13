@@ -38,7 +38,41 @@
 
 ### batch_loader
 
-instances_num获取总样本数。
+将输入的src、tgt、seg处理成批格式。
 
+instances_num获取总样本数。循环进行分割，每次yield各参数长为batch_size的一部分。最后对剩余数据进行处理。
 
+### read_dataset
 
+初始化dataset列表和columns字典。打开path指定的文件，对每一行进行遍历。第一行获取columns的keys，也即tsv文件首行的标签。对于其他行，首先通过split分隔出各个元素，获取其硬标签tgt。若有logits列，将logits列读取成浮点数列表，作为软标签soft_tgt。
+
+若没有text_b，仅读取text_a拼接CLS（和SEP？）作为src，seg为等长的全1；若有，则二者拼接CLS和两个SEP作为src，seg为1串和2串。若超出参数给定的序列长度，进行阶段；否则进行填充。将src、tgt、seq和可能的soft_tgt进行返回。
+
+### train_model
+
+将model的梯度归零。将src、tgt、seq和可能的soft_tgt搬移到device上。计算loss、反向传播、更新optimizer和scheduler。返回loss。
+
+### evaluate
+
+从元组中分离src、tgt、seq。获取batch_size。混淆矩阵初始化，长宽均为labels_num的全0矩阵。模型设置为eval模式。
+
+使用batch_loader遍历src、tgt、seq，对于每一个batch，搬移到device上，调用model计算logits。预测值为logits链接Softmax+argmax，真实值为tgt_batch，遍历并计入混淆矩阵，将正确的数量加到correct中。
+
+若print_confusion_matrix=True，则输出混淆矩阵。将混淆矩阵写入文件。对每个label，计算其预测的准确率、召回率和f1。
+
+计算并输出预测的总准确率，正确数目和总数目。返回总准确率和混淆矩阵。
+
+### main
+
+首先参数设置，除[uer](../uer/README.md).opts中的finetune_opts外，还包括：
+
+- `pooling` 池化方式，从哪一位置获取全局信息（`mean` 平均池化/`max` 最大池化/`first` CLS/`last` SEP），默认为`first`。
+- `tokenizer` 分词器（`bert` Google BERT/`char` 分割成字符/`space` 按空格分词），默认为`bert`。
+- `soft_targets` 是否使用软标签训练。
+- `soft_alpha` 软标签损失权重，默认为0.5（硬标签和软标签的loss各一半）。
+
+设置随机数。初始化model为Classifier对象。读取或初始化参数。搬移device。读取训练集，随机打乱，获取数据集大小和参数batch_size。分离出src、tgt、seq和可能的soft_tgt。设定参数train_steps，调用build_optimizer设置optimizer和scheduler。设置混合精度和GPU训练。
+
+训练循环epochs_num次，从batch_loader读取数据，调用train_model进行训练，统计loss并在固定steps打印。使用dev_path对应的验证数据集，调用不带输出的evaluate进行评估，若效果好于之前的最佳，则进行替换，保存模型数据。
+
+若指定测试集，则对测试集进行评估，对模型进行验证，调用evaluate计算测试集的混淆矩阵并且输出。
